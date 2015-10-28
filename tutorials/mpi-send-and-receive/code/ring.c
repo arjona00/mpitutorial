@@ -31,8 +31,14 @@ int main(int argc, char** argv) {
     // Set the token's value if you are process 0
     token = -1;
   }
+/*
   MPI_Send(&token, 1, MPI_INT, (world_rank + 1) % world_size, 0,
-           MPI_COMM_WORLD);
+           MPI_COMM_WORLD);*/
+
+  MPI_Request request;
+  MPI_ISend(&token, 1, MPI_INT, (world_rank + 1) % world_size, 0,
+	MPI_COMM_WORLD, &request);
+
   // Now process 0 can receive from the last process. This makes sure that at
   // least one MPI_Send is initialized before all MPI_Recvs (again, to prevent
   // deadlock)
