@@ -4,7 +4,13 @@
 #include <math.h>
 #include <mpi.h>
 
-//Realizo el producto de cada elemento del vector y lo inserto en v1
+//Compilacion
+//mpicc producto_vectores_mpi.c -o producto_vectores_mpi -lm
+
+//Ejecución
+//mpirun -np 20 producto_vectores_mpi
+
+//Realiza el producto de cada elemento del vector y lo inserto en v1
 void prod(int *v1, int *v2, int size) {
   int i;
 
