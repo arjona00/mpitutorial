@@ -106,12 +106,12 @@ double *matrix_sub_2;
 double *matrix_sub_res;
 
 //Para la matriz sub 1
-const int BLOCKROWS_1 = SIZE1/p; //Enviamos  SIZE1/p filas matrix1 por proceso
-const int BLOCKCOLS_1 = SIZE2; // Enviamos todas las columnas de matrix1
+const int BLOCKROWS_1 = SIZE1; //SIZE1/p; //Enviamos  x filas matrix1 por proceso
+const int BLOCKCOLS_1 = SIZE2/p; // Enviamos todas las columnas de matrix1
 
 //Para la matriz sub 2
 const int BLOCKROWS_2 = SIZE2; //Enviamos todas las filas de matrix2
-const int BLOCKCOLS_2 = SIZE3/p; //Enviamos SIZE3/p filas de matrix2 por proceso
+const int BLOCKCOLS_2 = 1; //SIZE3/p; //Enviamos x filas de matrix2 por proceso
 
 matrix_sub_1 = new_matrix(BLOCKROWS_1, BLOCKCOLS_1);
 matrix_sub_2 = new_matrix(BLOCKROWS_2, BLOCKCOLS_2);
@@ -139,84 +139,43 @@ for (i = 0; i < BLOCKROWS_1; i++) {
 MPI_Datatype blocktype;
 MPI_Datatype blocktype2;
 
-printf("VECTOR(%d, %d, %d) \n", SIZE1/p, SIZE2, SIZE2 );
-MPI_Type_vector(SIZE1/p, SIZE2, SIZE2, MPI_DOUBLE, &blocktype2);
+MPI_Type_vector(SIZE1, SIZE2/p, SIZE2, MPI_DOUBLE, &blocktype2);
 MPI_Type_create_resized( blocktype2, 0, sizeof(double), &blocktype);
 MPI_Type_commit(&blocktype);
 
-int NPROWS=p;
-int NPCOLS=1;
+int NPROWS=1;
+int NPCOLS=p;
 
-int disps1[NPROWS*NPCOLS];
-int counts1[NPROWS*NPCOLS];
+int disps[NPROWS*NPCOLS];
+int counts[NPROWS*NPCOLS];
 int ii, jj;
 for (ii=0; ii<NPROWS; ii++) {
     for (jj=0; jj<NPCOLS; jj++) {
-        disps1[ii*NPCOLS+jj] = ii*SIZE2*BLOCKROWS_1+jj*BLOCKCOLS_1;
-        counts1 [ii*NPCOLS+jj] = 1;
+        disps[ii*NPCOLS+jj] = ii*SIZE2*BLOCKROWS_1+jj*BLOCKCOLS_1;
+        counts [ii*NPCOLS+jj] = 1;
     }
 }
 
 if (rank == 0){
-  printf("disps matriz1 en proceso: %d\n",rank);
+  printf("disps en proceso: %d\n",rank);
   ii = 0;
-  for (jj=0; jj<NPROWS; jj++) {
-      printf("%3d ",(int)disps1[ii*NPROWS+jj]);
+  for (jj=0; jj<NPCOLS; jj++) {
+      printf("%3d ",(int)disps[ii*NPCOLS+jj]);
   }
   printf("\n");
+  
+  printf("matrix_sub_1 en proceso: %d\n",rank);
+  print_matrix(BLOCKROWS_1, BLOCKCOLS_1, matrix_sub_1);
 }
 
-//Enviamos la matriz1 y la submatriz1 donde se almacenan
-MPI_Scatterv(matrix1, counts1, disps1, blocktype, matrix_sub_1, BLOCKROWS_1*BLOCKCOLS_1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
+MPI_Scatterv(matrix1, counts, disps, blocktype, matrix_sub_1, BLOCKROWS_1*BLOCKCOLS_1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-printf("Matrix1 original en proceso:%d\n",rank);
+printf("Matrix1 en proceso:%d\n",rank);
 print_matrix(SIZE1, SIZE2, matrix1);
 
 printf("matrix_sub_1 en proceso:%d\n",rank);
 print_matrix(BLOCKROWS_1, BLOCKCOLS_1, matrix_sub_1);
-
-
-
-// Preparamos el envío de la matriz 2
-MPI_Datatype blocktype3;
-MPI_Datatype blocktype4;
-printf("VECTOR(%d, %d, %d) \n", SIZE2, SIZE3/p, SIZE3 );
-MPI_Type_vector(SIZE2, SIZE3/p, SIZE3, MPI_DOUBLE, &blocktype4);
-MPI_Type_create_resized( blocktype4, 0, sizeof(double), &blocktype3);
-MPI_Type_commit(&blocktype3);
-
-NPROWS=1;
-NPCOLS=p;
-
-int disps2[NPROWS*NPCOLS];
-int counts2[NPROWS*NPCOLS];
-
-for (ii=0; ii<NPROWS; ii++) {
-    for (jj=0; jj<NPCOLS; jj++) {
-        disps2[ii*NPCOLS+jj] = ii*SIZE3*BLOCKROWS_2+jj*BLOCKCOLS_2;
-        counts2[ii*NPCOLS+jj] = 1;
-    }
-}
-
-if (rank == 0){
-  printf("disps matriz2 en proceso: %d\n",rank);
-  ii = 0;
-  for (jj=0; jj<NPCOLS; jj++) {
-      printf("%3d ",(int)disps2[ii*NPCOLS+jj]);
-  }
-  printf("\n");
-}
-
-//Enviamos la matriz2 y la submatriz2 donde se almacenan
-MPI_Scatterv(matrix2, counts2, disps2, blocktype3, matrix_sub_2, BLOCKROWS_2*BLOCKCOLS_2, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-printf("Matrix2 original en proceso:%d\n",rank);
-print_matrix(SIZE2, SIZE3, matrix2);
-
-printf("matrix_sub_2 en proceso:%d\n",rank);
-print_matrix(BLOCKROWS_2, BLOCKCOLS_2, matrix_sub_2);
-
 
 
 /*

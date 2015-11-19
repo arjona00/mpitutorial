@@ -1,0 +1,3 @@
+/home/practicas/mpiTutorial/mpiPractica3/entrega/CMakeFiles/mpi_multmatrix.dir
+/home/practicas/mpiTutorial/mpiPractica3/entrega/CMakeFiles/multmatrix.dir
+/home/practicas/mpiTutorial/mpiPractica3/entrega/CMakeFiles/multmatrixseq.dir

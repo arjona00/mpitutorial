@@ -1,0 +1,1 @@
+/usr/bin/cc  -g    CMakeFiles/multmatrix.dir/sec_multmatrix.o  -o multmatrix -rdynamic 

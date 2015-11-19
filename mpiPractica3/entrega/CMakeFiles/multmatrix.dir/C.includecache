@@ -1,0 +1,14 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/practicas/mpiTutorial/mpiPractica3/entrega/sec_multmatrix.c
+stdio.h
+-
+stdlib.h
+-
+

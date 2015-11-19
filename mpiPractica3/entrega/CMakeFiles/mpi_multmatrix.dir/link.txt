@@ -1,0 +1,1 @@
+/usr/bin/cc  -g    CMakeFiles/mpi_multmatrix.dir/mpi_multmatrixseq.o  -o mpi_multmatrix -rdynamic -lmpi -ldl -lhwloc -lm 

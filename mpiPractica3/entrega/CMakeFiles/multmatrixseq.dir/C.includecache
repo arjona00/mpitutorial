@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/practicas/mpiTutorial/mpiPractica3/entrega/sec_multmatrixseq.c
+stdio.h
+-
+stdlib.h
+-
+assert.h
+-
+
