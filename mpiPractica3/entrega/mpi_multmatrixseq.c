@@ -283,14 +283,7 @@ if (rank == 0){
   printf("\n");
 }
 
-counts[0] = 1;
-counts[1] = 1;
-counts[2] = 1;
-counts[3] = 1;
-disps[0] = 0;
-disps[1] = 8;
-disps[2] = 4;
-disps[3] = 12; //Reunimos cada bloque
+//counts[0] = 1;counts[1] = 1;counts[2] = 1;counts[3] = 1;disps[0] = 0;disps[1] = 8;disps[2] = 4;disps[3] = 12; //Reunimos cada bloque
 
 MPI_Gatherv(matrix_sub_res, BLOCKROWS_1*BLOCKCOLS_2, MPI_DOUBLE, result, counts, disps, blocktype, 0, MPI_COMM_WORLD);
 
