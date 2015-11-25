@@ -15,17 +15,8 @@ void print_matrix(int size1, int size2, double *matrix) {
 
     printf("\n");
   }
-}
 
-void transpon(int size1, int size2, double *matrix){
-  int i, j;
-  for(i=0; i < size1-1; i++){
-    for(j=i+1; j < size2; j++){
-        int aux = matrix[i*size2+j]; // [i][j];
-        matrix[i*size2+j] = matrix[i+size2*j];
-        matrix[i+size2*j] = aux;
-    }
-  }
+
 }
 
 void multiply(int size1, int size2, int size3,
@@ -59,7 +50,6 @@ void free_matrix(double *matrix) {
     free(matrix);
   }
 }
-
 
 int main(int argc, char *argv[]) {
 
@@ -105,18 +95,11 @@ int main(int argc, char *argv[]) {
     print_matrix(SIZE1, SIZE3, result);
   }
 
+// Comienzo de procesamiento mpi
 
+    
 
-  /* Controla que el numero de procesos coincide con los datos a procesar */
-  if (p != 4 && SIZE1 == 4 && SIZE2 == 4 && SIZE3 == 4) {
-      fprintf(stderr,"Error: el número de procesos y tamaños de la matriz deben ser 4");
-      MPI_Finalize();
-      exit(-1);
-  }
-
-// Comienzo de procesamiento mpi  
-
-printf("Proceso %d de %d\n",rank,p-1);
+printf("Proceso %d de %d\n",rank,p);
 
 //Creamos las matrices reducidas
 //Inicialización de matrices: Matriz Fila de A, Matriz Columna de B, y resultado para cada proceso
@@ -128,7 +111,7 @@ double *matrix_sub_res;
 const int BLOCKROWS_1 = SIZE1/2; //Enviamos  SIZE1/p filas matrix1 por proceso
 const int BLOCKCOLS_1 = SIZE2; // Enviamos todas las columnas de matrix1
 
-if (rank == 0) printf("SIZE1 = %d , SIZE2 = %d , SIZE3 = %d , SIZE1/p = %d , SIZE3/p = %d \n",SIZE1, SIZE2, SIZE3, SIZE1/2, SIZE3/2);
+printf("SIZE1 = %d , SIZE2 = %d , SIZE3 = %d , SIZE1/p = %d , SIZE3/p = %d \n",SIZE1, SIZE2, SIZE3, SIZE1/2, SIZE3/2);
 
 //Para la matriz sub 2
 const int BLOCKROWS_2 = SIZE2; //Enviamos todas las filas de matrix2
@@ -160,7 +143,7 @@ for (i = 0; i < BLOCKROWS_1; i++) {
 MPI_Datatype blocktype;
 MPI_Datatype blocktype2;
 
-if (rank == 0) printf("VECTOR(%d, %d, %d) \n", SIZE1/2, SIZE2, SIZE2 );
+printf("VECTOR(%d, %d, %d) \n", SIZE1/2, SIZE2, SIZE2 );
 MPI_Type_vector(SIZE1/2, SIZE2, SIZE2, MPI_DOUBLE, &blocktype2);
 MPI_Type_create_resized( blocktype2, 0, sizeof(double), &blocktype);
 MPI_Type_commit(&blocktype);
@@ -168,32 +151,39 @@ MPI_Type_commit(&blocktype);
 int NPROWS=p;
 int NPCOLS=1;
 
-int disps[NPROWS*NPCOLS];
-int counts[NPROWS*NPCOLS];
+int disps1[NPROWS*NPCOLS];
+int counts1[NPROWS*NPCOLS];
 
 
 int ii, jj;
-// Por cada dos procesos, necesitamos enviarle dos filas secuencialmente
+/*
 for (ii=0; ii<NPROWS; ii++) {
     for (jj=0; jj<NPCOLS; jj++) {
-        disps[ii*NPCOLS+jj] = (ii/2)*BLOCKROWS_1*SIZE2;
-        counts [ii*NPCOLS+jj] = 1;
+        disps1[ii*NPCOLS+jj] = ii*SIZE2*BLOCKROWS_1+jj*BLOCKCOLS_1;
+        counts1 [ii*NPCOLS+jj] = 1;
     }
 }
 
 if (rank == 0){
-  printf("disps en proceso %d\n",rank);
+  printf("disps matriz1 en proceso: %d\n",rank);
   ii = 0;
   for (jj=0; jj<NPROWS; jj++) {
-      printf("%3d ",(int)disps[ii*NPROWS+jj]);
+      printf("%3d ",(int)disps1[ii*NPROWS+jj]);
   }
   printf("\n");
 }
-//counts[0] = 1;counts[1] = 1;counts[2] = 1;counts[3] = 1;disps[0] = 0;disps[1] = 0;disps[2] = 8;disps[3] = 8; //disps deseables
+*/
 
 //Enviamos la matriz1 y la submatriz1 donde se almacenan
-
-MPI_Scatterv(matrix1, counts, disps, blocktype, matrix_sub_1, BLOCKROWS_1*BLOCKCOLS_1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+counts1[0] = 1;
+counts1[1] = 1;
+counts1[2] = 1;
+counts1[3] = 1;
+disps1[0] = 0;
+disps1[1] = 0;
+disps1[2] = 8;
+disps1[3] = 8;
+MPI_Scatterv(matrix1, counts1, disps1, blocktype, matrix_sub_1, BLOCKROWS_1*BLOCKCOLS_1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 if (rank == 0){
   printf("Matrix1 original en proceso:%d\n",rank);
@@ -206,36 +196,48 @@ print_matrix(BLOCKROWS_1, BLOCKCOLS_1, matrix_sub_1);
 
 
 // Preparamos el envío de la matriz 2
-if (rank == 0) printf("VECTOR(%d, %d, %d) \n", SIZE2, SIZE3/2, SIZE3 );
+printf("VECTOR(%d, %d, %d) \n", SIZE2, SIZE3/2, SIZE3 );
 MPI_Type_vector(SIZE2, SIZE3/2, SIZE3, MPI_DOUBLE, &blocktype2);
 MPI_Type_create_resized( blocktype2, 0, sizeof(double), &blocktype);
 MPI_Type_commit(&blocktype);
 
+NPROWS=1;
+NPCOLS=p;
 
-// Por cada proceso alterno, necesitamos enviarle dos columnas
+int disps2[NPROWS*NPCOLS];
+int counts2[NPROWS*NPCOLS];
+
 for (ii=0; ii<NPROWS; ii++) {
-    for (jj=0; jj<NPCOLS; jj++) {        
-        disps[ii*NPCOLS+jj] = (jj % 2)*BLOCKCOLS_2;
-        counts[ii*NPCOLS+jj] = 1;
+    for (jj=0; jj<NPCOLS; jj++) {
+        disps2[ii*NPCOLS+jj] = ii*SIZE3*BLOCKROWS_2+jj*BLOCKCOLS_2;
+        counts2[ii*NPCOLS+jj] = 1;
     }
 }
 
 if (rank == 0){
-  printf("disps en proceso %d\n",rank);
+  printf("disps matriz2 en proceso: %d\n",rank);
   ii = 0;
   for (jj=0; jj<NPCOLS; jj++) {
-      printf("%3d ",(int)disps[ii*NPCOLS+jj]);
+      printf("%3d ",(int)disps2[ii*NPCOLS+jj]);
   }
   printf("\n");
 }
 
-counts[0] = 1;counts[1] = 1;counts[2] = 1;counts[3] = 1;disps[0] = 0;disps[1] = 2;disps[2] = 0;disps[3] = 2; //Para 4x4, desplazamientos deseados
+counts2[0] = 1;
+counts2[1] = 1;
+counts2[2] = 1;
+counts2[3] = 1;
+disps2[0] = 0;
+disps2[1] = 2;
+disps2[2] = 0;
+disps2[3] = 2;
 
 //Enviamos la matriz2 y la submatriz2 donde se almacenan
-MPI_Scatterv(matrix2, counts, disps, blocktype, matrix_sub_2, BLOCKROWS_2*BLOCKCOLS_2, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+MPI_Scatterv(matrix2, counts2, disps2, blocktype, matrix_sub_2, BLOCKROWS_2*BLOCKCOLS_2, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 printf("matrix_sub_2 en proceso:%d\n",rank);
 print_matrix(BLOCKROWS_2, BLOCKCOLS_2, matrix_sub_2);
+
 
 //Operación en cada proceso
 multiply(SIZE1/2, SIZE2, SIZE3/2, matrix_sub_1, matrix_sub_2, matrix_sub_res);
@@ -245,6 +247,9 @@ print_matrix(SIZE1/2, SIZE3/2, matrix_sub_res);
 
 
 //Recuperamos los resultados
+if (rank == 0){
+  printf("VECTOR GATHERV(%d, %d, %d) \n", SIZE2, SIZE3/2, SIZE3 );
+}
 
 // Limpiamos la matriz de resultados previa al gatherv
 if (rank == 0){
@@ -257,42 +262,20 @@ if (rank == 0){
   print_matrix(SIZE1, SIZE3, result);
 }
 
-if (rank == 0) printf("VECTOR GATHERV(%d, %d, %d) \n", SIZE2/2, SIZE3/2, SIZE3/2 );
-MPI_Type_vector(2, 2,2, MPI_DOUBLE, &blocktype2);
+MPI_Type_vector(SIZE1/2, SIZE2/2, SIZE3/2, MPI_DOUBLE, &blocktype2);
 MPI_Type_create_resized( blocktype2, 0, sizeof(double), &blocktype);
 MPI_Type_commit(&blocktype);
 
-// Cada proceso envía su trozo en bloques de 4 elementos
+counts2[0] = 1;
+counts2[1] = 1;
+counts2[2] = 1;
+counts2[3] = 1;
+disps2[0] = 0;
+disps2[1] = 4;
+disps2[2] = 8;
+disps2[3] = 12;
 
-NPROWS=p;
-NPCOLS=1;
-for (ii=0; ii<NPROWS; ii++) {
-    for (jj=0; jj<NPCOLS; jj++) {
-      //printf("disps ii*SIZE2 %d\n",ii*SIZE2);
-        disps[ii*NPCOLS+jj] = ii*SIZE2;
-        counts[ii*NPCOLS+jj] = 1;
-    }
-}
-
-if (rank == 0){
-  printf("disps final en proceso %d\n",rank);
-  jj = 0;
-  for (ii=0; ii<NPROWS; ii++) {
-      printf("%3d ",(int)disps[ii*NPCOLS+jj]);
-  }
-  printf("\n");
-}
-
-counts[0] = 1;
-counts[1] = 1;
-counts[2] = 1;
-counts[3] = 1;
-disps[0] = 0;
-disps[1] = 8;
-disps[2] = 4;
-disps[3] = 12; //Reunimos cada bloque
-
-MPI_Gatherv(matrix_sub_res, BLOCKROWS_1*BLOCKCOLS_2, MPI_DOUBLE, result, counts, disps, blocktype, 0, MPI_COMM_WORLD);
+MPI_Gatherv(matrix_sub_res, BLOCKROWS_1*BLOCKCOLS_2, MPI_DOUBLE, result, counts2, disps2, blocktype, 0, MPI_COMM_WORLD);
 
 if (rank == 0){
   // Apply the matrix multiplication

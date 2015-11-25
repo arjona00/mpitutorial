@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   double *result;
   const int SIZE1=3;
   const int SIZE2=2;
-  const int SIZE3=4;
+  const int SIZE3=3;
 
   int i, j;
 

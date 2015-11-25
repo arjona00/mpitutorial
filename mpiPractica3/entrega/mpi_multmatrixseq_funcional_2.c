@@ -15,17 +15,8 @@ void print_matrix(int size1, int size2, double *matrix) {
 
     printf("\n");
   }
-}
 
-void transpon(int size1, int size2, double *matrix){
-  int i, j;
-  for(i=0; i < size1-1; i++){
-    for(j=i+1; j < size2; j++){
-        int aux = matrix[i*size2+j]; // [i][j];
-        matrix[i*size2+j] = matrix[i+size2*j];
-        matrix[i+size2*j] = aux;
-    }
-  }
+
 }
 
 void multiply(int size1, int size2, int size3,
@@ -59,7 +50,6 @@ void free_matrix(double *matrix) {
     free(matrix);
   }
 }
-
 
 int main(int argc, char *argv[]) {
 
@@ -105,16 +95,9 @@ int main(int argc, char *argv[]) {
     print_matrix(SIZE1, SIZE3, result);
   }
 
+// Comienzo de procesamiento mpi
 
-
-  /* Controla que el numero de procesos coincide con los datos a procesar */
-  if (p != 4 && SIZE1 == 4 && SIZE2 == 4 && SIZE3 == 4) {
-      fprintf(stderr,"Error: el número de procesos y tamaños de la matriz deben ser 4");
-      MPI_Finalize();
-      exit(-1);
-  }
-
-// Comienzo de procesamiento mpi  
+    
 
 printf("Proceso %d de %d\n",rank,p-1);
 
@@ -258,7 +241,7 @@ if (rank == 0){
 }
 
 if (rank == 0) printf("VECTOR GATHERV(%d, %d, %d) \n", SIZE2/2, SIZE3/2, SIZE3/2 );
-MPI_Type_vector(2, 2,2, MPI_DOUBLE, &blocktype2);
+MPI_Type_vector(1, 4, 8, MPI_DOUBLE, &blocktype2);
 MPI_Type_create_resized( blocktype2, 0, sizeof(double), &blocktype);
 MPI_Type_commit(&blocktype);
 
@@ -288,8 +271,8 @@ counts[1] = 1;
 counts[2] = 1;
 counts[3] = 1;
 disps[0] = 0;
-disps[1] = 8;
-disps[2] = 4;
+disps[1] = 4;
+disps[2] = 8;
 disps[3] = 12; //Reunimos cada bloque
 
 MPI_Gatherv(matrix_sub_res, BLOCKROWS_1*BLOCKCOLS_2, MPI_DOUBLE, result, counts, disps, blocktype, 0, MPI_COMM_WORLD);
